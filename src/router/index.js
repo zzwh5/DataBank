@@ -9,14 +9,14 @@ const routes = [
   {
     path: '/',
     component: layout,
-    redirect: '/home',
-    meta: { hasChildren: false, title: '首页' },
+    redirect: '/data',
+    meta: { hasChildren: false, title: '资料中心' },
     children: [
       {
-        path: 'home',
-        name: 'Home',
+        path: 'data',
+        name: 'Data',
         component: Home,
-        meta: { title: '首页' }
+        meta: { title: '资料中心', icon: 'database' }
       }
     ]
   }

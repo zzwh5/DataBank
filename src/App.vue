@@ -4,18 +4,13 @@
   </div>
 </template>
 <script>
-import { initStorageType } from './util/storage.js'
 export default {
   data() {
     return {
       collapsed: false
     }
   },
-  created() {
-    // 页面进入的时候 初始化token的存储位置
-    // console.log(initStorageType)
-    initStorageType()
-  },
+  created() {},
   methods: {
     onCollapse(collapsed, type) {
       console.log(collapsed, type)

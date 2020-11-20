@@ -14,7 +14,8 @@ import {
   Form,
   Input,
   Table,
-  Select
+  Select,
+  Upload
 } from 'ant-design-vue'
 import 'ant-design-vue/dist/antd.css'
 Vue.use(Button)
@@ -31,3 +32,4 @@ Vue.use(Button)
   .use(Input)
   .use(Table)
   .use(Select)
+  .use(Upload)
