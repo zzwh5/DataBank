@@ -55,6 +55,23 @@ export function get(url, params) {
   })
 }
 
+export function gets(url, params) {
+  return new Promise((resolve, reject) => {
+    axios({
+      method: 'get',
+      url: baseUrl + url,
+      params: params,
+      responseType: 'blob'
+    })
+      .then(res => {
+        resolve(res.data)
+      })
+      .catch(err => {
+        reject(err.data)
+      })
+  })
+}
+
 // 封装post请求
 export function post(url, params, type) {
   return new Promise((resolve, reject) => {
@@ -147,25 +164,25 @@ export function patch(url, params) {
   })
 }
 
-// 排序 + 过滤 + 分页的搜索 post请求
-export function postSearch(url, params, data, filter) {
+export function upload(url, params) {
   return new Promise((resolve, reject) => {
+    // console.log(url)
+    // console.log(baseUrl + url)
     axios({
       method: 'post',
       url: baseUrl + url,
-      params: params,
-      data: {
-        orderCondition: data,
-        searchConditions: filter
-      },
+      data: params,
       headers: {
-        'content-type': 'application/json'
+        // 'token': store.state.token,
+        'content-type': 'multipart/form-data'
       }
     })
       .then(res => {
+        // console.log(res)
         resolve(res.data)
       })
       .catch(error => {
+        // console.log(error)
         reject(error)
       })
   })

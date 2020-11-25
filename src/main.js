@@ -9,6 +9,9 @@ import './assets/style/reset.css'
 // antd的组件库
 import './util/import'
 
+// 引入打印组件
+// import Print from 'vue-print-nb'
+// Vue.use(Print); //注册
 // 路由进度条
 // 导入
 import NProgress from 'nprogress'
