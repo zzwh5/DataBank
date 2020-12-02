@@ -18,5 +18,5 @@ export const crud = {
   Update: params => put('doc', params),
   Delete: params => deletefn('doc', params),
   Upload: params => upload('doc/upload', params),
-  DetailHtml: params => get('doc/html', params)
+  DetailHtml: params => get('doc/img', params)
 }

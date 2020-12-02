@@ -31,7 +31,7 @@ axios.interceptors.response.use(
 export function get(url, params) {
   return new Promise((resolve, reject) => {
     axios
-      .get(baseUrl + url, {
+      .get(baseUrl + url + '?timestr=' + new Date().getTime(), {
         params: params
       })
       .then(res => {
@@ -59,7 +59,7 @@ export function gets(url, params) {
   return new Promise((resolve, reject) => {
     axios({
       method: 'get',
-      url: baseUrl + url,
+      url: baseUrl + url + '?timestr=' + new Date().getTime(),
       params: params,
       responseType: 'blob'
     })
@@ -79,7 +79,7 @@ export function post(url, params, type) {
     // console.log(baseUrl + url)
     axios({
       method: 'post',
-      url: baseUrl + url,
+      url: baseUrl + url + '?timestr=' + new Date().getTime(),
       data: params,
       headers: {
         // 'token': store.state.token,
@@ -101,7 +101,7 @@ export function post(url, params, type) {
 export function qspost(url, params) {
   return new Promise((resolve, reject) => {
     axios
-      .post(url, qs.stringify(params))
+      .post(url + '?timestr=' + new Date().getTime(), qs.stringify(params))
       .then(res => {
         resolve(res.data)
       })
@@ -115,7 +115,7 @@ export function qspost(url, params) {
 export function put(url, params) {
   return new Promise((resolve, reject) => {
     axios
-      .put(baseUrl + url, params)
+      .put(baseUrl + url + '?timestr=' + new Date().getTime(), params)
       .then(res => {
         resolve(res.data)
       })
@@ -138,7 +138,7 @@ export function deletefn(url, params) {
     //   })
     axios({
       method: 'delete',
-      url: baseUrl + url,
+      url: baseUrl + url + '?timestr=' + new Date().getTime(),
       params: params // 请求参数拼接在url上
     })
       .then(res => {
@@ -154,7 +154,7 @@ export function deletefn(url, params) {
 export function patch(url, params) {
   return new Promise((resolve, reject) => {
     axios
-      .patch(baseUrl + url, params)
+      .patch(baseUrl + url + '?timestr=' + new Date().getTime(), params)
       .then(res => {
         resolve(res.data)
       })
@@ -170,7 +170,7 @@ export function upload(url, params) {
     // console.log(baseUrl + url)
     axios({
       method: 'post',
-      url: baseUrl + url,
+      url: baseUrl + url + '?timestr=' + new Date().getTime(),
       data: params,
       headers: {
         // 'token': store.state.token,

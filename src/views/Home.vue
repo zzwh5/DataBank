@@ -106,7 +106,6 @@
             下载
           </a-button>
           <a-button type="primary" ghost size="small" @click="print(record)">
-            
             打印
           </a-button>
           <a-button type="danger" ghost size="small" @click="handleDel(record)">
@@ -167,32 +166,42 @@
         </a-row>
       </a-form>
     </a-modal>
-    <div ref="print" id="print" style="width: 100vw; display: none">
+    <!-- zhnegzia  -->
+    <Loading :visible="visible1" :text="text" />
+    <div id="print" style="display: none; width: '100%'; height: '100%'">
+      <!-- <img :src="Src" alt="" /> -->
       <iframe
-        id="iframe"
-        :src="Src"
+        id="printIframe"
         width="100%"
         height="100%"
+        :src="Src"
         frameborder="0"
-        scrolling="auto"
       >
       </iframe>
     </div>
   </div>
 </template>
 <script>
+import { message } from 'ant-design-vue'
+import $ from 'jquery'
+// 正在加载中的组件
+import Loading from '@/components/loading.vue'
 // 引入接口
 import { crud } from '@/request/api'
 // antd的弹框
 import { Modal } from 'ant-design-vue'
-// 
-import Print from 'vue-print-nb'
 export default {
   name: 'Data',
+  components: {
+    Loading
+  },
   data() {
     return {
+      // 正在加载中
+      visible1: false,
+      text: '加载中',
       // 拼接 后台返回的链接 baseurl
-      url: process.env.VUE_APP_BASE_API,
+      url: process.env.VUE_APP_BASE_URL,
       // iframe嵌套的网页的src
       Src: '',
       // 选中的列表的集合
@@ -219,7 +228,7 @@ export default {
           title: 'id',
           ellipsis: true,
           key: 'id',
-          width: '5%'
+          width: '3%'
         },
         {
           dataIndex: 'name',
@@ -233,14 +242,14 @@ export default {
           title: '类型',
           ellipsis: true,
           key: 'type',
-          width: '10%'
+          width: '5%'
         },
         {
           dataIndex: 'size',
           title: '大小',
           ellipsis: true,
           key: 'size',
-          width: '10%'
+          width: '8%'
         },
         {
           dataIndex: 'keyword',
@@ -297,7 +306,24 @@ export default {
     }
   },
   created() {
-    this.getTable()
+    var that = this
+    // 如果sessionstorage中有状态
+    this.pagination = sessionStorage.getItem('pagination')
+      ? JSON.parse(sessionStorage.getItem('pagination'))
+      : { current: 1, pageSize: 10, total: 0 }
+    this.filter = sessionStorage.getItem('filter')
+      ? JSON.parse(sessionStorage.getItem('filter'))
+      : {}
+    this.sort = sessionStorage.getItem('sort')
+      ? JSON.parse(sessionStorage.getItem('sort'))
+      : {}
+    this.selectedRowKeys = sessionStorage.getItem('selectedRowKeys')
+      ? JSON.parse(sessionStorage.getItem('selectedRowKeys'))
+      : []
+    sessionStorage.clear()
+    setTimeout(() => {
+      that.getTable()
+    }, 100)
   },
   mounted() {},
   methods: {
@@ -310,6 +336,8 @@ export default {
     // 获取表格数据
     getTable() {
       this.loading = true
+      this.text = '加载中'
+      this.visible1 = true
       var that = this
       that.table = []
       // 查询的条件
@@ -339,8 +367,10 @@ export default {
       }
       // console.log({})
       crud.Search(obj).then((res) => {
+        this.visible1 = false
         // console.log(res)
         if (res.code != 200) {
+          message.error('系统异常请稍后重试')
           return false
         }
         setTimeout(() => {
@@ -353,30 +383,50 @@ export default {
     // 点击搜索
     handleSearch(e) {
       e.preventDefault()
-      this.getTable()
+      var that = this
+      setTimeout(() => {
+        that.getTable()
+      }, 100)
     },
     // 点击重置 搜索条件
     handleReset() {
-      this.formsearch.resetFields()
+      this.filter = {}
+      var that = this
+      setTimeout(() => {
+        that.getTable()
+      }, 100)
     },
     // 刷新表格
     refresh() {
-      this.getTable()
+      var that = this
+      setTimeout(() => {
+        that.getTable()
+      }, 100)
     },
     // 当表格的 分页排序条件发生变化的时候
     onChange(pagination, filters, sort) {
+      var that = this
       if (sort.column) {
         this.sort.field = sort.column.tableField
         this.sort.condition = sort.order == 'ascend' ? 'ASC' : 'DESC'
       }
       this.pagination = JSON.parse(JSON.stringify(pagination))
+      setTimeout(() => {
+        that.getTable()
+      }, 200)
       // console.log(this.pagination)
-      this.getTable()
     },
     // 上传文件之前的操作
     beforeUpload(file, fileList) {
-      console.log(file)
-      // return false
+      // console.log(file)
+      var type = ['doc', 'docx', 'xls', 'xlsx']
+      // console.log(type.indexOf(file.name.split('.')[1]))
+      var arr = file.name.split('.')
+      console.log(type.indexOf(arr[arr.length - 1]))
+      if (type.indexOf(arr[arr.length - 1]) == -1) {
+        message.error('选择正确的文件格式')
+        return false
+      }
     },
     // 上传文件
     uploadFile(file) {
@@ -385,6 +435,10 @@ export default {
       formData.append('file', file.file)
       // console.log(formData)
       crud.Upload(formData).then((res) => {
+        if (res.code != 200) {
+          message.error(res.message || '系统异常请稍后重试')
+          return false
+        }
         console.log(res)
         this.visible = true
         this.currentfile = {
@@ -394,9 +448,16 @@ export default {
     },
     // 表格的查看 编辑 删除按钮
     handleDetail(obj) {
+      this.text = '加载中'
+      this.visible1 = true
       // console.log(obj)
       crud.DetailHtml({ id: obj.id }).then((res) => {
-        var html = this.url + res
+        this.visible1 = false
+        if (res.code != 200) {
+          message.error('系统异常请稍后重试')
+          return false
+        }
+        var html = this.url + res.data
         window.open(html)
       })
     },
@@ -415,46 +476,65 @@ export default {
     },
     // 下载文件
     download(record) {
+      this.visible1 = true
+      this.text = '下载中'
       // console.log(record.type)
-      var type = record.type.indexOf('doc')!=-1?'application/msword':'application/vnd.ms-excel'
+      var type =
+        record.type.indexOf('doc') != -1
+          ? 'application/msword'
+          : 'application/vnd.ms-excel'
       // console.log(type)
-      crud.DownLoad({ id: record.id }).then((res) => {
-        // console.log(res)
-        const blob = new Blob([res], { type: type }) // res就是接口返回的文件流了
-        const objectUrl = URL.createObjectURL(blob)
-        window.location.href = objectUrl
+      crud.DetailHtml({ id: record.id }).then((res) => {
+        console.log(this.visible1)
+        this.visible1 = false
+        if (res.code != 200) {
+          message.error('系统异常请稍后')
+          return false
+        }
+        crud.DownLoad({ id: record.id }).then((res) => {
+          // if (res.code != 200) {
+          //   message.error('下载失败请重试')
+          //   return false
+          // }
+          this.visible1 = false
+          // console.log(res)
+          const blob = new Blob([res], { type: type }) // res就是接口返回的文件流了
+          const objectUrl = URL.createObjectURL(blob)
+          window.location.href = objectUrl
+        })
       })
     },
     // 打印文件
     print(obj) {
-      var that = this
-      console.log(this.url)
+      // console.log(this.url)
+      sessionStorage.setItem(
+        'selectedRowKeys',
+        JSON.stringify(this.selectedRowKeys)
+      )
+      sessionStorage.setItem('pagination', JSON.stringify(this.pagination))
+      sessionStorage.setItem('filter', JSON.stringify(this.filter))
+      sessionStorage.setItem('sort', JSON.stringify(this.sort))
+      this.visible1 = true
+      this.text = '解析中'
       crud.DetailHtml({ id: obj.id }).then((res) => {
-        var html = this.url + res
-        this.Src = html
-        console.log(this.Src)
-        setTimeout(() => {
-          // Print(this.$refs.print)
-          // console.log(Print)
-          document.body.innerHTML = this.$refs.print.innerHTML
-          // console.log()
-          // var iframe = document.getElementById('iframe')
-          // window.print()
-            const oIframe = document.getElementById('iframe');
-    const deviceWidth = document.documentElement.clientWidth;
-    const deviceHeight = document.documentElement.clientHeight;
-    oIframe.style.width = (Number(deviceWidth)) + 'px'; //数字是页面布局宽度差值
-    oIframe.style.height = (Number(deviceHeight)) + 'px'; //数字是页面布局高度差
-
-          //  iframe.onload = function () {
-          //     console.log(iframe.contentWindow.document.body.innerHTML)
-          //  }
-          // var myWindow = window.open(html,'_blank')
-	        // myWindow.focus();
-          // myWindow.print()
-          // iframe.contentWindow.focus()
-          // iframe.contentWindow.print()
-        }, 1000)
+        if (res.code != 200) {
+          message.error('系统异常请稍后')
+          this.visible1 = false
+          return false
+        }
+        crud.DownLoad({ id: obj.id }).then((re) => {
+          // console.log(re)
+          this.visible1 = false
+          var html = this.url + res.data
+          this.Src = html
+          setTimeout(() => {
+            // document.body.innerHTML = document.getElementById('print').innerHTML
+          }, 1000)
+          setTimeout(() => {
+            $('iframe')[0].contentWindow.print()
+            // location.reload()
+          }, 2000)
+        })
       })
     },
     // 批量删除
@@ -488,9 +568,11 @@ export default {
       })
     },
     delfn(arr) {
+      var that = this
       crud.Delete({ ids: arr.join(',') }).then((res) => {
         // console.log(res)
         if (res.code != 200) {
+          message.error('删除失败，请稍后重试')
           return false
         }
         if (this.pagination.current != 1) {
@@ -501,7 +583,9 @@ export default {
         }
         // 删除完成之后将选中的列表清空
         this.selectedRowKeys = []
-        this.getTable()
+        setTimeout(() => {
+          that.getTable()
+        }, 200)
       })
     },
     handleDel(obj) {
@@ -534,11 +618,15 @@ export default {
     },
     // 关键字弹框的 取消确认按钮
     handleCancel() {
+      var that = this
       this.currentfile = {}
       this.visible = false
-      this.getTable()
+      setTimeout(() => {
+        that.getTable()
+      }, 100)
     },
     handleOk(e) {
+      var that = this
       e.preventDefault()
       this.confirmLoading = true
       this.form.validateFields((error, values) => {
@@ -551,15 +639,69 @@ export default {
           ...values
         }
         crud.Update(obj).then((res) => {
+          this.visible = false
           // console.log(res)
           if (res.code != 200) {
+            message.error('系统异常请稍后重试')
             return false
           }
-          this.visible = false
           this.currentfile = {}
-          this.getTable()
+          setTimeout(() => {
+            that.getTable()
+          }, 100)
         })
       })
+    },
+    // 判断当前浏览类型
+    BrowserType() {
+      var userAgent = navigator.userAgent // 取得浏览器的userAgent字符串
+      var isOpera = userAgent.indexOf('Opera') > -1 // 判断是否Opera浏览器
+      var isIE =
+        userAgent.indexOf('compatible') > -1 &&
+        userAgent.indexOf('MSIE') > -1 &&
+        !isOpera // 判断是否IE浏览器
+      var isEdge =
+        userAgent.indexOf('Windows NT 6.1; Trident/7.0;') > -1 && !isIE // 判断是否IE的Edge浏览器
+      var isFF = userAgent.indexOf('Firefox') > -1 // 判断是否Firefox浏览器
+      var isSafari =
+        userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') == -1 // 判断是否Safari浏览器
+      var isChrome =
+        userAgent.indexOf('Chrome') > -1 && userAgent.indexOf('Safari') > -1 // 判断Chrome浏览器
+      console.log(isIE)
+      if (isIE) {
+        var reIE = new RegExp('MSIE (\\d+\\.\\d+);')
+        reIE.test(userAgent)
+        var fIEVersion = parseFloat(RegExp['$1'])
+        if (fIEVersion == 7) {
+          return 'IE7'
+        } else if (fIEVersion == 8) {
+          return 'IE8'
+        } else if (fIEVersion == 9) {
+          return 'IE9'
+        } else if (fIEVersion == 10) {
+          return 'IE10'
+        } else if (fIEVersion == 11) {
+          return 'IE11'
+        } else {
+          return '0'
+        } // IE版本过低
+      } // isIE end
+
+      if (isFF) {
+        return 'FF'
+      }
+      if (isOpera) {
+        return 'Opera'
+      }
+      if (isSafari) {
+        return 'Safari'
+      }
+      if (isChrome) {
+        return 'Chrome'
+      }
+      if (isEdge) {
+        return 'Edge'
+      }
     }
   }
 }

@@ -6,7 +6,7 @@
       breakpoint="lg"
       @collapse="onCollapse"
     >
-      <div class="logo"></div>
+      <div class="logo">文件管理中心</div>
       <SlideBar :collapsed="collapsed" />
     </a-layout-sider>
     <a-layout>
@@ -97,7 +97,11 @@ export default {
 
 #components-layout-demo-responsive .logo {
   height: 32px;
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.5);
   margin: 16px;
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
