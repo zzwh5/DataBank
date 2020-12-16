@@ -430,6 +430,7 @@ export default {
     },
     // 上传文件
     uploadFile(file) {
+      this.visible1 = true
       console.log(file.file)
       var formData = new FormData()
       formData.append('file', file.file)
@@ -441,6 +442,7 @@ export default {
         }
         console.log(res)
         this.visible = true
+        this.visible1 = false
         this.currentfile = {
           ...res.data
         }
