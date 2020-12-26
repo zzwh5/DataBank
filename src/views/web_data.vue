@@ -32,7 +32,7 @@
               >
                 重置
               </a-button>
-              <a-upload
+              <!-- <a-upload
                 :style="{ marginLeft: '8px' }"
                 name="file"
                 :file-list="fileList"
@@ -40,7 +40,7 @@
                 :beforeUpload="beforeUpload"
               >
                 <a-button> <a-icon type="upload" /> 上传</a-button>
-              </a-upload>
+              </a-upload> -->
             </a-col>
           </a-row>
         </a-form>
@@ -52,7 +52,7 @@
               <a-button type="primary" icon="redo" @click="refresh">
                 刷新
               </a-button>
-              <a-button
+              <!-- <a-button
                 type="danger"
                 icon="edit"
                 :disabled="selectCount > 0 ? false : true"
@@ -60,8 +60,9 @@
               >
                 删除
               </a-button>
-            </a-button-group>
-          </a-col>
+            </a-button-group> -->
+            </a-button-group></a-col
+          >
         </a-row>
       </div>
     </div>
@@ -94,23 +95,23 @@
           >
             查看
           </a-button>
-          <a-button
+          <!-- <a-button
             type="primary"
             ghost
             size="small"
             @click="handleEdit(record)"
           >
             编辑
-          </a-button>
+          </a-button> -->
           <a-button type="primary" ghost size="small" @click="download(record)">
             下载
           </a-button>
           <a-button type="primary" ghost size="small" @click="print(record)">
             打印
           </a-button>
-          <a-button type="danger" ghost size="small" @click="handleDel(record)">
+          <!-- <a-button type="danger" ghost size="small" @click="handleDel(record)">
             删除
-          </a-button>
+          </a-button> -->
         </template>
       </a-table>
     </div>
@@ -549,32 +550,38 @@ export default {
       sessionStorage.setItem('sort', JSON.stringify(this.sort))
       this.visible1 = true
       this.text = '解析中'
-      crud.DetailHtml({ id: obj.id }).then((res) => {
-        if (res.code != 200) {
-          message.error('系统异常请稍后')
+      crud
+        .DetailHtml({ id: obj.id })
+        .then((res) => {
+          if (res.code != 200) {
+            message.error('系统异常请稍后')
+            this.visible1 = false
+            return false
+          }
+          crud
+            .DownLoad({ id: obj.id })
+            .then((re) => {
+              // console.log(re)
+              this.visible1 = false
+              var html = this.url + res.data
+              this.Src = html
+              setTimeout(() => {
+                // document.body.innerHTML = document.getElementById('print').innerHTML
+              }, 1000)
+              setTimeout(() => {
+                $('iframe')[0].contentWindow.print()
+                // location.reload()
+              }, 2000)
+            })
+            .catch((err) => {
+              console.log(err)
+              this.visible1 = false
+            })
+        })
+        .catch((err) => {
+          console.log(err)
           this.visible1 = false
-          return false
-        }
-        crud
-          .DownLoad({ id: obj.id })
-          .then((re) => {
-            // console.log(re)
-            this.visible1 = false
-            var html = this.url + res.data
-            this.Src = html
-            setTimeout(() => {
-              // document.body.innerHTML = document.getElementById('print').innerHTML
-            }, 1000)
-            setTimeout(() => {
-              $('iframe')[0].contentWindow.print()
-              // location.reload()
-            }, 2000)
-          })
-          .catch((err) => {
-            console.log(err)
-            this.visible1 = false
-          })
-      })
+        })
     },
     // 批量删除
     delSelect() {

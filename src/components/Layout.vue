@@ -7,7 +7,7 @@
       @collapse="onCollapse"
     >
       <div class="logo">文件管理中心</div>
-      <SlideBar :collapsed="collapsed" />
+      <SlideBar :collapsed="collapsed" :currentRoute="current_route" />
     </a-layout-sider>
     <a-layout>
       <a-layout-header
@@ -49,10 +49,22 @@ export default {
   },
   data() {
     return {
-      collapsed: false
+      collapsed: false,
+      current_route: {}
     }
   },
-  created() {},
+  watch: {
+    $route: {
+      deep: true,
+      handler: function (val, oldv) {
+        // console.log(val)
+        this.current_route = val
+      }
+    }
+  },
+  created() {
+    this.current_route = this.$route
+  },
   methods: {
     onCollapse(collapsed, type) {
       // console.log(collapsed, type)

@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Home from '../views/Home.vue'
+import WebData from '../views/web_data.vue'
 import layout from '../components/Layout.vue'
 
 Vue.use(VueRouter)
@@ -10,12 +11,18 @@ const routes = [
     path: '/',
     component: layout,
     redirect: '/data',
-    meta: { hasChildren: false, title: '资料中心' },
+    meta: { hasChildren: true, title: '资料中心' },
     children: [
       {
         path: 'data',
         name: 'Data',
         component: Home,
+        meta: { title: '资料中心', icon: 'database' }
+      },
+      {
+        path: 'webData',
+        name: 'WebData',
+        component: WebData,
         meta: { title: '资料中心', icon: 'database' }
       }
     ]
