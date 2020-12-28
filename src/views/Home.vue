@@ -525,7 +525,13 @@ export default {
               // console.log(res)
               const blob = new Blob([res], { type: type }) // res就是接口返回的文件流了
               const objectUrl = URL.createObjectURL(blob)
-              window.location.href = objectUrl
+              // window.location.href = objectUrl
+              const a = document.createElement('a') // 创建a标签
+              a.style.display = 'none'
+              a.href = objectUrl // 指定下载链接
+              a.download = record.name // 指定下载文件名
+              a.click() // 触发下载
+              URL.revokeObjectURL(a.href) // 释放URL对象
             })
             .catch((err) => {
               console.log(err)
@@ -561,6 +567,7 @@ export default {
             // console.log(re)
             this.visible1 = false
             var html = this.url + res.data
+            console.log(html)
             this.Src = html
             setTimeout(() => {
               // document.body.innerHTML = document.getElementById('print').innerHTML
