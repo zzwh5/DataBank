@@ -61,6 +61,9 @@
                 删除
               </a-button>
             </a-button-group>
+            <span style="margin-left: 20px; opacity: 0.7"
+              >当前仅支持xlsx、xls、docx、doc(不支持二维码)!</span
+            >
           </a-col>
         </a-row>
       </div>
