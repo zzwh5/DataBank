@@ -38,6 +38,7 @@
                 :file-list="fileList"
                 :customRequest="uploadFile"
                 :beforeUpload="beforeUpload"
+                accept=".xlsx,.xls,.docx,.doc"
               >
                 <a-button> <a-icon type="upload" /> 上传</a-button>
               </a-upload>
@@ -61,8 +62,9 @@
                 删除
               </a-button>
             </a-button-group>
-            <span style="margin-left: 20px; opacity: 0.7"
-              >当前仅支持xlsx、xls、docx、doc(不支持二维码)!</span
+            <span
+              style="margin-left: 20px; opacity: 0.7"
+            >当前仅支持xlsx、xls、docx、doc(不支持二维码)!</span
             >
           </a-col>
         </a-row>
@@ -379,7 +381,7 @@ export default {
             return false
           }
           setTimeout(() => {
-            this.loading = false
+            that.loading = false
           }, 200)
           this.data = res.data
           this.pagination.total = res.total
@@ -387,6 +389,10 @@ export default {
         .catch((err) => {
           console.log(err)
           this.visible1 = false
+          setTimeout(() => {
+            message.error('系统异常请稍后')
+            that.loading = false
+          }, 200)
         })
     },
     // 点击搜索
