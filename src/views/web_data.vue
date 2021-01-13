@@ -103,12 +103,12 @@
           >
             编辑
           </a-button> -->
-          <a-button type="primary" ghost size="small" @click="download(record)">
+          <!-- <a-button type="primary" ghost size="small" @click="download(record)">
             下载
           </a-button>
           <a-button type="primary" ghost size="small" @click="print(record)">
             打印
-          </a-button>
+          </a-button> -->
           <!-- <a-button type="danger" ghost size="small" @click="handleDel(record)">
             删除
           </a-button> -->
@@ -250,7 +250,7 @@ export default {
           title: '大小',
           ellipsis: true,
           key: 'size',
-          width: '8%'
+          width: '5%'
         },
         {
           dataIndex: 'keyword',
@@ -265,7 +265,7 @@ export default {
           ellipsis: true,
           key: 'action',
           scopedSlots: { customRender: 'action' },
-          width: '15%'
+          width: '5%'
         }
       ],
       // 表格的数据
