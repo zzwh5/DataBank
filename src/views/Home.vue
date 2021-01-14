@@ -16,40 +16,29 @@
                 </a-form-item>
               </a-col>
             </template>
-          </a-row>
-          <a-row>
-            <a-col
-              :span="24"
-              :style="{ textAlign: 'right', paddingRight: '2rem' }"
-            >
+            <a-col :span="8" style="position: relative; top: -10px">
               <a-button icon="search" type="primary" html-type="submit">
                 查询
               </a-button>
-              <a-button
+              <!-- <a-button
                 icon="undo"
                 :style="{ marginLeft: '8px' }"
                 @click="handleReset"
               >
                 重置
-              </a-button>
-              <a-upload
-                :style="{ marginLeft: '8px' }"
-                name="file"
-                :file-list="fileList"
-                :customRequest="uploadFile"
-                :beforeUpload="beforeUpload"
-                accept=".xlsx,.xls,.docx,.doc"
+              </a-button> -->
+              <a-button style="margin-left: 2%" @click="uploadFilebtn">
+                <a-icon type="upload" /> 上传</a-button
               >
-                <a-button> <a-icon type="upload" /> 上传</a-button>
-              </a-upload>
             </a-col>
           </a-row>
+          <a-row />
         </a-form>
       </div>
       <div class="edit">
         <a-row>
           <a-col :span="24">
-            <a-button-group>
+            <a-button-group style="width: 100%">
               <a-button type="primary" icon="redo" @click="refresh">
                 刷新
               </a-button>
@@ -62,14 +51,14 @@
                 删除
               </a-button>
             </a-button-group>
-            <span style="margin-left: 20px; opacity: 0.7"
+            <!-- <span style="margin-left: 20px; opacity: 0.7"
               >当前仅支持xlsx、xls、docx、doc(不支持二维码)!</span
-            >
+            > -->
           </a-col>
         </a-row>
       </div>
     </div>
-    <div class="table">
+    <div class="table" style="margin-top: 1%">
       <a-table
         :columns="tablecolumns"
         :data-source="data"
@@ -89,6 +78,9 @@
         }"
         @change="onChange"
       >
+        <template slot="size" slot-scope="text, record">
+          <span>{{ text }}字节</span>
+        </template>
         <template slot="action" slot-scope="text, record">
           <a-button
             type="primary"
@@ -96,8 +88,11 @@
             size="small"
             @click="handleDetail(record)"
           >
-            查看
+            预览打印
           </a-button>
+          <!-- <a-button type="primary" ghost size="small" @click="print(record)">
+            
+          </a-button> -->
           <a-button
             type="primary"
             ghost
@@ -107,20 +102,18 @@
             编辑
           </a-button>
           <a-button type="primary" ghost size="small" @click="download(record)">
-            下载
+            下载文件
           </a-button>
-          <a-button type="primary" ghost size="small" @click="print(record)">
-            打印
-          </a-button>
+
           <a-button type="danger" ghost size="small" @click="handleDel(record)">
-            删除
+            删除文件
           </a-button>
         </template>
       </a-table>
     </div>
     <!-- 输入关键字的弹框  -->
     <a-modal
-      title="Title"
+      :title="Title"
       dialogClass="modal"
       :visible="visible"
       width="45%"
@@ -137,7 +130,7 @@
         <a-button
           key="submit"
           type="primary"
-          :loading="loading"
+          :loading="confirmLoading"
           @click="handleOk"
         >
           确认
@@ -168,21 +161,51 @@
             </a-form-item>
           </a-col>
         </a-row>
+        <a-row v-if="types" :gutter="48">
+          <a-col key="file" :span="12">
+            <a-form-item label="选择文件">
+              <a-upload
+                :style="{ marginLeft: '8px' }"
+                name="file"
+                :file-list="fileList"
+                :customRequest="uploadFile"
+                :beforeUpload="beforeUpload"
+                accept=".docx"
+              >
+                <a-button> <a-icon type="upload" /> 上传</a-button>
+              </a-upload>
+            </a-form-item>
+          </a-col>
+        </a-row>
       </a-form>
     </a-modal>
-    <!-- zhnegzia  -->
+    <!-- 正在加载中  -->
     <Loading :visible="visible1" :text="text" />
-    <div id="print" style="display: none; width: '100%'; height: '100%'">
-      <!-- <img :src="Src" alt="" /> -->
-      <iframe
-        id="printIframe"
-        width="100%"
-        height="100%"
-        :src="Src"
-        frameborder="0"
-      >
-      </iframe>
-    </div>
+    <!-- 查看的弹框 -->
+    <a-modal
+      title=""
+      dialogClass="preview"
+      :visible="visibleSee"
+      width="80%"
+      height="95%"
+      centered
+      :destroyOnClose="true"
+      :maskClosable="false"
+      :footer="null"
+      @cancel="visibleSee = false"
+    >
+      <div id="print" style="width: '100%'; height: '700px'; background: #fff">
+        <!-- <img :src="Src" alt="" /> -->
+        <iframe
+          id="printIframe"
+          width="100%"
+          height="100%"
+          :src="showwordsrc + Src"
+          frameborder="0"
+        >
+        </iframe>
+      </div>
+    </a-modal>
   </div>
 </template>
 <script>
@@ -201,6 +224,14 @@ export default {
   },
   data() {
     return {
+      // 编辑和新增的弹框名称
+      Title: '上传文件',
+      // 判断是新增还是编辑
+      types: false,
+      // 查看文件的弹框是否展示
+      visibleSee: false,
+      // 预览文件的 链接
+      showwordsrc: 'https://view.officeapps.live.com/op/view.aspx?src=',
       // 正在加载中
       visible1: false,
       text: '加载中',
@@ -213,51 +244,48 @@ export default {
       // 顶部搜索的字段列表
       searchcolumns: [
         {
-          name: '名字',
+          name: '文件名称',
           field: 'name'
         },
         {
-          name: '关键字',
+          name: '搜索关键字',
           field: 'keyword'
-        },
-        {
-          name: '类型',
-          field: 'type'
         }
       ],
       // 表格字段列表
       tablecolumns: [
         {
           dataIndex: 'id',
-          title: 'id',
+          title: '文件编码',
           ellipsis: true,
           key: 'id',
-          width: '3%'
+          width: '5%'
         },
         {
           dataIndex: 'name',
-          title: '名字',
+          title: '文件名称',
           ellipsis: true,
           key: 'name',
           width: '10%'
         },
         {
           dataIndex: 'type',
-          title: '类型',
+          title: '文件类型',
           ellipsis: true,
           key: 'type',
           width: '5%'
         },
         {
           dataIndex: 'size',
-          title: '大小',
+          title: '文件大小',
           ellipsis: true,
           key: 'size',
-          width: '8%'
+          width: '8%',
+          scopedSlots: { customRender: 'size' }
         },
         {
           dataIndex: 'keyword',
-          title: '关键字',
+          title: '搜索关键字',
           ellipsis: true,
           key: 'keyword',
           width: '10%'
@@ -433,7 +461,7 @@ export default {
     // 上传文件之前的操作
     beforeUpload(file, fileList) {
       // console.log(file)
-      var type = ['doc', 'docx', 'xls', 'xlsx']
+      var type = ['docx']
       // console.log(type.indexOf(file.name.split('.')[1]))
       var arr = file.name.split('.')
       console.log(type.indexOf(arr[arr.length - 1]))
@@ -442,49 +470,38 @@ export default {
         return false
       }
     },
+    // 点击上传按钮之前的操作
+    uploadFilebtn() {
+      this.visible = true
+      this.Title = '上传文件'
+      this.types = true
+    },
     // 上传文件
     uploadFile(file) {
       this.visible1 = true
       // console.log(file.file)
-      this.text = '上传中'
-      var formData = new FormData()
-      formData.append('file', file.file)
-      // console.log(formData)
-      crud
-        .Upload(formData)
-        .then((res) => {
-          this.visible1 = false
-          if (res.code != 200) {
-            message.error(res.message || '系统异常请稍后重试')
-            return false
-          }
-          console.log(res)
-          this.visible = true
-
-          this.currentfile = {
-            ...res.data
-          }
-        })
-        .catch((err) => {
-          console.log(err)
-          this.visible1 = false
-        })
+      this.fileList = [file.file]
     },
     // 表格的查看 编辑 删除按钮
     handleDetail(obj) {
+      this.visibleSee = true
+      // return false
       this.text = '加载中'
       this.visible1 = true
       // console.log(obj)
       crud
-        .DetailHtml({ id: obj.id })
+        .Detail({ id: obj.id })
         .then((res) => {
+          console.log(res)
           this.visible1 = false
           if (res.code != 200) {
             message.error('系统异常请稍后重试')
             return false
           }
-          var html = this.url + res.data
-          window.open(html)
+          var html = this.url + res.data.uri + res.data.type
+          console.log(html)
+          // window.open(html)
+          this.Src = html
         })
         .catch((err) => {
           console.log(err)
@@ -493,7 +510,9 @@ export default {
     },
     // 表格的编辑
     handleEdit(obj) {
+      this.types = false
       crud.Detail({ id: obj.id }).then((res) => {
+        this.Title = '修改关键字'
         this.visible = true
         // console.log(obj)
         // console.log(res)
@@ -506,6 +525,7 @@ export default {
     },
     // 下载文件
     download(record) {
+      console.log(record)
       this.visible1 = true
       this.text = '下载中'
       // console.log(record.type)
@@ -513,39 +533,18 @@ export default {
         record.type.indexOf('doc') != -1
           ? 'application/msword'
           : 'application/vnd.ms-excel'
-      // console.log(type)
+
       crud
-        .DetailHtml({ id: record.id })
+        .Detail({ id: record.id })
         .then((res) => {
-          console.log(this.visible1)
+          console.log(res)
+          // if (res.code != 200) {
+          //   message.error('下载失败请重试')
+          //   return false
+          // }
           this.visible1 = false
-          if (res.code != 200) {
-            message.error('系统异常请稍后')
-            return false
-          }
-          crud
-            .DownLoad({ id: record.id })
-            .then((res) => {
-              // if (res.code != 200) {
-              //   message.error('下载失败请重试')
-              //   return false
-              // }
-              this.visible1 = false
-              // console.log(res)
-              const blob = new Blob([res], { type: type }) // res就是接口返回的文件流了
-              const objectUrl = URL.createObjectURL(blob)
-              // window.location.href = objectUrl
-              const a = document.createElement('a') // 创建a标签
-              a.style.display = 'none'
-              a.href = objectUrl // 指定下载链接
-              a.download = record.name // 指定下载文件名
-              a.click() // 触发下载
-              URL.revokeObjectURL(a.href) // 释放URL对象
-            })
-            .catch((err) => {
-              console.log(err)
-              this.visible1 = false
-            })
+          // console.log(res)
+          window.location.href = res.data.downUrl
         })
         .catch((err) => {
           console.log(err)
@@ -673,95 +672,78 @@ export default {
     },
     // 关键字弹框的 取消确认按钮
     handleCancel() {
-      var that = this
       this.currentfile = {}
       this.visible = false
-      setTimeout(() => {
-        that.getTable()
-      }, 100)
     },
     handleOk(e) {
       var that = this
+      if (this.confirmLoading) {
+        return false
+      }
+      // var that = this
       e.preventDefault()
-      this.confirmLoading = true
+
       this.form.validateFields((error, values) => {
         if (error) {
           console.log(error)
         }
-        // console.log(values)
-        var obj = {
-          ...this.currentfile,
-          ...values
-        }
-        crud.Update(obj).then((res) => {
-          this.visible = false
-          // console.log(res)
-          if (res.code != 200) {
-            message.error('系统异常请稍后重试')
-            return false
-          }
-          this.currentfile = {}
-          setTimeout(() => {
-            that.getTable()
-          }, 100)
-        })
-      })
-    },
-    // 判断当前浏览类型
-    BrowserType() {
-      var userAgent = navigator.userAgent // 取得浏览器的userAgent字符串
-      var isOpera = userAgent.indexOf('Opera') > -1 // 判断是否Opera浏览器
-      var isIE =
-        userAgent.indexOf('compatible') > -1 &&
-        userAgent.indexOf('MSIE') > -1 &&
-        !isOpera // 判断是否IE浏览器
-      var isEdge =
-        userAgent.indexOf('Windows NT 6.1; Trident/7.0;') > -1 && !isIE // 判断是否IE的Edge浏览器
-      var isFF = userAgent.indexOf('Firefox') > -1 // 判断是否Firefox浏览器
-      var isSafari =
-        userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') == -1 // 判断是否Safari浏览器
-      var isChrome =
-        userAgent.indexOf('Chrome') > -1 && userAgent.indexOf('Safari') > -1 // 判断Chrome浏览器
-      console.log(isIE)
-      if (isIE) {
-        var reIE = new RegExp('MSIE (\\d+\\.\\d+);')
-        reIE.test(userAgent)
-        var fIEVersion = parseFloat(RegExp['$1'])
-        if (fIEVersion == 7) {
-          return 'IE7'
-        } else if (fIEVersion == 8) {
-          return 'IE8'
-        } else if (fIEVersion == 9) {
-          return 'IE9'
-        } else if (fIEVersion == 10) {
-          return 'IE10'
-        } else if (fIEVersion == 11) {
-          return 'IE11'
-        } else {
-          return '0'
-        } // IE版本过低
-      } // isIE end
 
-      if (isFF) {
-        return 'FF'
-      }
-      if (isOpera) {
-        return 'Opera'
-      }
-      if (isSafari) {
-        return 'Safari'
-      }
-      if (isChrome) {
-        return 'Chrome'
-      }
-      if (isEdge) {
-        return 'Edge'
-      }
+        var formData = new FormData()
+        if (this.fileList.length < 1) {
+          message.error('请选择上传文件')
+          return false
+        }
+        this.confirmLoading = true
+        this.text = '上传中'
+        this.visible1 = true
+        formData.append('file', this.fileList[0])
+        if (values.keyword) {
+          formData.append('keyword', values.keyword)
+        } else {
+          formData.append('keyword', '')
+        }
+        crud
+          .Upload(formData)
+          .then((res) => {
+            this.confirmLoading = false
+            this.visible1 = false
+            if (res.code != 200) {
+              message.error(res.message || '系统异常请稍后重试')
+              return false
+            }
+            console.log(res)
+            this.visible = false
+            message.success('上传成功')
+            this.fileList = []
+            setTimeout(() => {
+              that.getTable()
+            }, 100)
+          })
+          .catch((err) => {
+            console.log(err)
+            this.visible1 = false
+            this.confirmLoading = false
+          })
+      })
     }
   }
 }
 </script>
 <style scoped lang="scss">
+/deep/.ant-modal.preview {
+  .ant-modal-content {
+    width: 100%;
+    height: 100%;
+    .ant-modal-body {
+      width: 100%;
+      height: 100%;
+      padding: 40px !important;
+      #print {
+        height: 100%;
+      }
+    }
+  }
+}
 .data-bank {
   .header {
     .search {

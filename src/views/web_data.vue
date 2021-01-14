@@ -16,54 +16,20 @@
                 </a-form-item>
               </a-col>
             </template>
-          </a-row>
-          <a-row>
-            <a-col
-              :span="24"
-              :style="{ textAlign: 'right', paddingRight: '2rem' }"
-            >
+            <a-col :span="8" style="position: relative; top: -10px">
               <a-button icon="search" type="primary" html-type="submit">
                 查询
               </a-button>
               <a-button
                 icon="undo"
                 :style="{ marginLeft: '8px' }"
-                @click="handleReset"
+                @click="refresh"
               >
-                重置
+                刷新
               </a-button>
-              <!-- <a-upload
-                :style="{ marginLeft: '8px' }"
-                name="file"
-                :file-list="fileList"
-                :customRequest="uploadFile"
-                :beforeUpload="beforeUpload"
-              >
-                <a-button> <a-icon type="upload" /> 上传</a-button>
-              </a-upload> -->
             </a-col>
           </a-row>
         </a-form>
-      </div>
-      <div class="edit">
-        <a-row>
-          <a-col :span="24">
-            <a-button-group>
-              <a-button type="primary" icon="redo" @click="refresh">
-                刷新
-              </a-button>
-              <!-- <a-button
-                type="danger"
-                icon="edit"
-                :disabled="selectCount > 0 ? false : true"
-                @click="delSelect"
-              >
-                删除
-              </a-button>
-            </a-button-group> -->
-            </a-button-group></a-col
-          >
-        </a-row>
       </div>
     </div>
     <div class="table">
@@ -86,6 +52,9 @@
         }"
         @change="onChange"
       >
+        <template slot="size" slot-scope="text, record">
+          {{ text }}字节
+        </template>
         <template slot="action" slot-scope="text, record">
           <a-button
             type="primary"
@@ -93,7 +62,7 @@
             size="small"
             @click="handleDetail(record)"
           >
-            查看
+            预览文件
           </a-button>
           <!-- <a-button
             type="primary"
@@ -169,17 +138,41 @@
     </a-modal>
     <!-- zhnegzia  -->
     <Loading :visible="visible1" :text="text" />
-    <div id="print" style="display: none; width: '100%'; height: '100%'">
-      <!-- <img :src="Src" alt="" /> -->
-      <iframe
-        id="printIframe"
-        width="100%"
-        height="100%"
-        :src="Src"
-        frameborder="0"
-      >
-      </iframe>
-    </div>
+    <a-modal
+      title=""
+      dialogClass="preview"
+      :visible="visibleSee"
+      width="80%"
+      height="95%"
+      centered
+      :destroyOnClose="true"
+      :maskClosable="false"
+      :footer="null"
+      @cancel="visibleSee = false"
+    >
+      <div
+        class="bg"
+        style="
+          background-color: #fff !important;
+          width: 100%;
+          left: 0;
+          height: 40px;
+          position: absolute;
+          top: 90px;
+        "
+      ></div>
+      <div id="print" style="width: '100%'; height: '700px'; background: #fff">
+        <!-- <img :src="Src" alt="" /> -->
+        <iframe
+          id="printIframe"
+          width="100%"
+          height="100%"
+          :src="showwordsrc + Src"
+          frameborder="0"
+        >
+        </iframe>
+      </div>
+    </a-modal>
   </div>
 </template>
 <script>
@@ -198,6 +191,10 @@ export default {
   },
   data() {
     return {
+      // 查看文件的弹框是否展示
+      visibleSee: false,
+      // 预览文件的 链接
+      showwordsrc: 'https://view.officeapps.live.com/op/view.aspx?src=',
       // 正在加载中
       visible1: false,
       text: '加载中',
@@ -210,51 +207,48 @@ export default {
       // 顶部搜索的字段列表
       searchcolumns: [
         {
-          name: '名字',
+          name: '文件名称',
           field: 'name'
         },
         {
-          name: '关键字',
+          name: '搜索关键字',
           field: 'keyword'
-        },
-        {
-          name: '类型',
-          field: 'type'
         }
       ],
       // 表格字段列表
       tablecolumns: [
         {
           dataIndex: 'id',
-          title: 'id',
+          title: '文件编码',
           ellipsis: true,
           key: 'id',
-          width: '3%'
+          width: '5%'
         },
         {
           dataIndex: 'name',
-          title: '名字',
+          title: '文件名称',
           ellipsis: true,
           key: 'name',
           width: '10%'
         },
         {
           dataIndex: 'type',
-          title: '类型',
+          title: '文件类型',
           ellipsis: true,
           key: 'type',
           width: '5%'
         },
         {
           dataIndex: 'size',
-          title: '大小',
+          title: '文件大小',
           ellipsis: true,
           key: 'size',
-          width: '5%'
+          width: '8%',
+          scopedSlots: { customRender: 'size' }
         },
         {
           dataIndex: 'keyword',
-          title: '关键字',
+          title: '搜索关键字',
           ellipsis: true,
           key: 'keyword',
           width: '10%'
@@ -265,7 +259,7 @@ export default {
           ellipsis: true,
           key: 'action',
           scopedSlots: { customRender: 'action' },
-          width: '5%'
+          width: '8%'
         }
       ],
       // 表格的数据
@@ -464,19 +458,24 @@ export default {
     },
     // 表格的查看 编辑 删除按钮
     handleDetail(obj) {
+      this.visibleSee = true
+      // return false
       this.text = '加载中'
       this.visible1 = true
       // console.log(obj)
       crud
-        .DetailHtml({ id: obj.id })
+        .Detail({ id: obj.id })
         .then((res) => {
+          console.log(res)
           this.visible1 = false
           if (res.code != 200) {
             message.error('系统异常请稍后重试')
             return false
           }
-          var html = this.url + res.data
-          window.open(html)
+          var html = this.url + res.data.uri + res.data.type
+          console.log(html)
+          // window.open(html)
+          this.Src = html
         })
         .catch((err) => {
           console.log(err)
@@ -753,6 +752,21 @@ export default {
 }
 </script>
 <style scoped lang="scss">
+/deep/.ant-modal.preview {
+  .ant-modal-content {
+    width: 100%;
+    height: 100%;
+    .ant-modal-body {
+      width: 100%;
+      height: 100%;
+      padding: 40px !important;
+      position: relative;
+      #print {
+        height: 100%;
+      }
+    }
+  }
+}
 .data-bank {
   .header {
     .search {
