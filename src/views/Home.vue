@@ -224,6 +224,8 @@ export default {
   },
   data() {
     return {
+      // 当前编辑的id
+      ids: null,
       // 编辑和新增的弹框名称
       Title: '上传文件',
       // 判断是新增还是编辑
@@ -469,6 +471,10 @@ export default {
         message.error('选择正确的文件格式')
         return false
       }
+      if (file.size > 1024 * 1024 * 5) {
+        message.error('选择的文件不能大于5M')
+        return false
+      }
     },
     // 点击上传按钮之前的操作
     uploadFilebtn() {
@@ -514,6 +520,7 @@ export default {
       crud.Detail({ id: obj.id }).then((res) => {
         this.Title = '修改关键字'
         this.visible = true
+        this.ids = res.data.id
         // console.log(obj)
         // console.log(res)
         this.$nextTick(() => {
@@ -689,41 +696,74 @@ export default {
         }
 
         var formData = new FormData()
-        if (this.fileList.length < 1) {
+        if (this.fileList.length < 1 && this.types) {
           message.error('请选择上传文件')
           return false
         }
         this.confirmLoading = true
-        this.text = '上传中'
         this.visible1 = true
-        formData.append('file', this.fileList[0])
-        if (values.keyword) {
-          formData.append('keyword', values.keyword)
+        if (this.types) {
+          this.text = '上传中'
+          formData.append('file', this.fileList[0])
+          if (values.keyword) {
+            formData.append('keyword', values.keyword)
+          } else {
+            formData.append('keyword', '')
+          }
+          crud
+            .Upload(formData)
+            .then((res) => {
+              this.confirmLoading = false
+              this.visible1 = false
+              if (res.code != 200) {
+                message.error(res.message || '系统异常请稍后重试')
+                return false
+              }
+              console.log(res)
+              this.visible = false
+              message.success('上传成功')
+              this.fileList = []
+              setTimeout(() => {
+                that.getTable()
+              }, 100)
+            })
+            .catch((err) => {
+              console.log(err)
+              this.visible1 = false
+              this.confirmLoading = false
+            })
         } else {
-          formData.append('keyword', '')
+          this.text = '编辑中'
+          // console.log(values)
+          const obj = {
+            id: this.ids,
+            ...values
+          }
+          // console.log(obj)
+          crud
+            .Update(obj)
+            .then((res) => {
+              console.log(res)
+              this.visible1 = false
+              if (res.code != 200) {
+                message.error('系统异常请稍后重试')
+                return false
+              }
+              message.success('修改成功')
+              this.visible = false
+              this.form.setFieldsValue({
+                keyword: ''
+              })
+              this.fileList = []
+              setTimeout(() => {
+                that.getTable()
+              }, 100)
+            })
+            .catch((err) => {
+              console.log(err)
+              this.visible1 = false
+            })
         }
-        crud
-          .Upload(formData)
-          .then((res) => {
-            this.confirmLoading = false
-            this.visible1 = false
-            if (res.code != 200) {
-              message.error(res.message || '系统异常请稍后重试')
-              return false
-            }
-            console.log(res)
-            this.visible = false
-            message.success('上传成功')
-            this.fileList = []
-            setTimeout(() => {
-              that.getTable()
-            }, 100)
-          })
-          .catch((err) => {
-            console.log(err)
-            this.visible1 = false
-            this.confirmLoading = false
-          })
       })
     }
   }
