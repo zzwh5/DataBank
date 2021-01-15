@@ -484,7 +484,6 @@ export default {
     },
     // 上传文件
     uploadFile(file) {
-      this.visible1 = true
       // console.log(file.file)
       this.fileList = [file.file]
     },
@@ -536,10 +535,10 @@ export default {
       this.visible1 = true
       this.text = '下载中'
       // console.log(record.type)
-      var type =
-        record.type.indexOf('doc') != -1
-          ? 'application/msword'
-          : 'application/vnd.ms-excel'
+      // var type =
+      //   record.type.indexOf('doc') != -1
+      //     ? 'application/msword'
+      //     : 'application/vnd.ms-excel'
 
       crud
         .Detail({ id: record.id })
