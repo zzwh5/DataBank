@@ -78,7 +78,7 @@
         }"
         @change="onChange"
       >
-        <template slot="size" slot-scope="text, record">
+        <template slot="size" slot-scope="text">
           <span>{{ text }}字节</span>
         </template>
         <template slot="action" slot-scope="text, record">
@@ -170,7 +170,7 @@
                 :file-list="fileList"
                 :customRequest="uploadFile"
                 :beforeUpload="beforeUpload"
-                accept=".docx"
+                accept=".docx,.xlsx,.xls"
               >
                 <a-button> <a-icon type="upload" /> 上传</a-button>
               </a-upload>
@@ -192,7 +192,7 @@
       :destroyOnClose="true"
       :maskClosable="false"
       :footer="null"
-      @cancel="visibleSee = false"
+      @cancel="diaolog_see_close"
     >
       <div id="print" style="width: '100%'; height: '700px'; background: #fff">
         <!-- <img :src="Src" alt="" /> -->
@@ -361,6 +361,10 @@ export default {
   },
   mounted() {},
   methods: {
+    diaolog_see_close() {
+      this.visibleSee = false
+      this.Src = ''
+    },
     // 当选中的列表发生变化的时候
     onSelectChange(selectedRowKeys, selectedRows) {
       // console.log(selectedRowKeys, selectedRows)
@@ -463,7 +467,7 @@ export default {
     // 上传文件之前的操作
     beforeUpload(file, fileList) {
       // console.log(file)
-      var type = ['docx']
+      var type = ['docx', 'xlsx', 'xls']
       // console.log(type.indexOf(file.name.split('.')[1]))
       var arr = file.name.split('.')
       console.log(type.indexOf(arr[arr.length - 1]))
