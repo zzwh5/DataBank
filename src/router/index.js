@@ -25,14 +25,14 @@ const routes = [
         name: 'WebData',
         component: WebData,
         meta: { title: '资料中心', icon: 'database' }
-      },
-      {
-        path: '/preview',
-        name: 'Preview',
-        component: Preview,
-        meta: { title: '预览文件', icon: 'database' }
       }
     ]
+  },
+  {
+    path: '/preview',
+    name: 'Preview',
+    component: Preview,
+    meta: { title: '预览文件', icon: 'database' }
   }
 ]
 
