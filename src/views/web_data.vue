@@ -148,7 +148,7 @@
       :destroyOnClose="true"
       :maskClosable="false"
       :footer="null"
-      @cancel="visibleSee = false"
+      @cancel="diaolog_see_close"
     >
       <div
         class="bg"
@@ -161,13 +161,26 @@
           top: 90px;
         "
       ></div>
+      <div
+        class="big_bg"
+        style="
+          background-color: transparent !important;
+          width: 93%;
+          height: 78%;
+          left: 49%;
+          transform: translateX(-50%);
+          position: absolute;
+          top: 90px;
+          z-index: 999;
+        "
+      ></div>
       <div id="print" style="width: '100%'; height: '700px'; background: #fff">
         <!-- <img :src="Src" alt="" /> -->
         <iframe
           id="printIframe"
           width="100%"
           height="100%"
-          :src="showwordsrc + Src"
+          :src="Src"
           frameborder="0"
         >
         </iframe>
@@ -322,6 +335,10 @@ export default {
   },
   mounted() {},
   methods: {
+    diaolog_see_close() {
+      this.visibleSee = false
+      this.Src = ''
+    },
     // 当选中的列表发生变化的时候
     onSelectChange(selectedRowKeys, selectedRows) {
       // console.log(selectedRowKeys, selectedRows)
@@ -472,7 +489,8 @@ export default {
             message.error('系统异常请稍后重试')
             return false
           }
-          var html = this.url + res.data.uri + res.data.type
+          // var html = this.url + res.data.uri + res.data.type
+          var html = res.data.previewUrl
           console.log(html)
           // window.open(html)
           this.Src = html

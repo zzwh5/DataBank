@@ -170,7 +170,8 @@
                 :file-list="fileList"
                 :customRequest="uploadFile"
                 :beforeUpload="beforeUpload"
-                accept=".docx,.xlsx,.xls"
+                accept=".doc,.docx,.xlsx,.xls"
+                :remove="handleRemove"
               >
                 <a-button> <a-icon type="upload" /> 上传</a-button>
               </a-upload>
@@ -200,7 +201,7 @@
           id="printIframe"
           width="100%"
           height="100%"
-          :src="showwordsrc + Src"
+          :src="Src"
           frameborder="0"
         >
         </iframe>
@@ -361,6 +362,13 @@ export default {
   },
   mounted() {},
   methods: {
+    // 移除某个上传的文件
+    handleRemove(file) {
+      const index = this.fileList.indexOf(file)
+      const newFileList = this.fileList.slice()
+      newFileList.splice(index, 1)
+      this.fileList = newFileList
+    },
     diaolog_see_close() {
       this.visibleSee = false
       this.Src = ''
@@ -467,9 +475,10 @@ export default {
     // 上传文件之前的操作
     beforeUpload(file, fileList) {
       // console.log(file)
-      var type = ['docx', 'xlsx', 'xls']
+      var type = ['doc', 'docx', 'xlsx', 'xls']
       // console.log(type.indexOf(file.name.split('.')[1]))
       var arr = file.name.split('.')
+      console.log(arr)
       console.log(type.indexOf(arr[arr.length - 1]))
       if (type.indexOf(arr[arr.length - 1]) == -1) {
         message.error('选择正确的文件格式')
@@ -507,7 +516,8 @@ export default {
             message.error('系统异常请稍后重试')
             return false
           }
-          var html = this.url + res.data.uri + res.data.type
+          // var html = this.url + res.data.uri + res.data.type
+          var html = res.data.previewUrl
           console.log(html)
           // window.open(html)
           this.Src = html
@@ -684,6 +694,7 @@ export default {
     handleCancel() {
       this.currentfile = {}
       this.visible = false
+      this.fileList = []
     },
     handleOk(e) {
       var that = this
@@ -752,6 +763,7 @@ export default {
                 message.error('系统异常请稍后重试')
                 return false
               }
+              this.confirmLoading = false
               message.success('修改成功')
               this.visible = false
               this.form.setFieldsValue({
