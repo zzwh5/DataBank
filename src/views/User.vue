@@ -20,19 +20,38 @@
               <a-button icon="search" type="primary" html-type="submit">
                 查询
               </a-button>
-              <a-button
-                icon="undo"
-                :style="{ marginLeft: '8px' }"
-                @click="refresh"
+              <a-button style="margin-left: 2%" @click="uploadFilebtn">
+                <a-icon type="user-add" /> 新增</a-button
               >
-                刷新
-              </a-button>
             </a-col>
           </a-row>
+          <a-row />
         </a-form>
       </div>
+      <div class="edit">
+        <a-row>
+          <a-col :span="24">
+            <a-button-group style="width: 100%">
+              <a-button type="primary" icon="redo" @click="refresh">
+                刷新
+              </a-button>
+              <a-button
+                type="danger"
+                icon="edit"
+                :disabled="selectCount > 0 ? false : true"
+                @click="delSelect"
+              >
+                删除
+              </a-button>
+            </a-button-group>
+            <!-- <span style="margin-left: 20px; opacity: 0.7"
+              >当前仅支持xlsx、xls、docx、doc(不支持二维码)!</span
+            > -->
+          </a-col>
+        </a-row>
+      </div>
     </div>
-    <div class="table">
+    <div class="table" style="margin-top: 1%">
       <a-table
         :columns="tablecolumns"
         :data-source="data"
@@ -52,19 +71,19 @@
         }"
         @change="onChange"
       >
-        <template slot="size" slot-scope="text, record">
-          {{ text }}字节
+        <template slot="size" slot-scope="text">
+          <span>{{ text }}字节</span>
         </template>
         <template slot="action" slot-scope="text, record">
-          <a-button
+          <!-- <a-button
             type="primary"
             ghost
             size="small"
             @click="handleDetail(record)"
           >
-            预览文件
+            查看
           </a-button>
-          <!-- <a-button
+          <a-button
             type="primary"
             ghost
             size="small"
@@ -72,24 +91,23 @@
           >
             编辑
           </a-button> -->
-          <!-- <a-button type="primary" ghost size="small" @click="download(record)">
-            下载
-          </a-button>
-          <a-button type="primary" ghost size="small" @click="print(record)">
-            打印
-          </a-button> -->
-          <!-- <a-button type="danger" ghost size="small" @click="handleDel(record)">
+          <a-button
+            type="danger"
+            ghost
+            size="small"
+            @click="del_single(record)"
+          >
             删除
-          </a-button> -->
+          </a-button>
         </template>
       </a-table>
     </div>
     <!-- 输入关键字的弹框  -->
     <a-modal
-      title="Title"
+      :title="Title"
       dialogClass="modal"
       :visible="visible"
-      width="45%"
+      width="35%"
       :maskClosable="false"
       centered
       :destroyOnClose="true"
@@ -103,7 +121,7 @@
         <a-button
           key="submit"
           type="primary"
-          :loading="loading"
+          :loading="confirmLoading"
           @click="handleOk"
         >
           确认
@@ -117,84 +135,60 @@
       >
         <a-row :gutter="48">
           <a-col key="keyword" :span="12">
-            <a-form-item label="关键字">
+            <a-form-item label="用户名">
               <a-input
                 v-decorator="[
-                  'keyword',
+                  'username',
                   {
                     rules: [
                       {
-                        required: false
+                        required: true,
+                        message: '请输入用户名'
                       }
                     ]
                   }
                 ]"
-                placeholder="请输入关键字"
+                :disabled="Title == '查看用户' ? true : false"
+                placeholder="请输入用户名"
+              />
+            </a-form-item>
+          </a-col>
+        </a-row>
+        <a-row :gutter="48">
+          <a-col key="keyword" :span="12">
+            <a-form-item label="密码">
+              <a-input
+                v-decorator="[
+                  'password',
+                  {
+                    rules: [
+                      {
+                        required: true,
+                        message: '请输入密码'
+                      }
+                    ]
+                  }
+                ]"
+                :disabled="Title == '查看用户' ? true : false"
+                placeholder="请输入密码"
               />
             </a-form-item>
           </a-col>
         </a-row>
       </a-form>
     </a-modal>
-    <!-- zhnegzia  -->
+    <!-- 正在加载中  -->
     <Loading :visible="visible1" :text="text" />
-    <a-modal
-      title=""
-      dialogClass="preview"
-      :visible="visibleSee"
-      width="80%"
-      height="95%"
-      centered
-      :destroyOnClose="true"
-      :maskClosable="false"
-      :footer="null"
-      @cancel="diaolog_see_close"
-    >
-      <div
-        class="bg"
-        style="
-          background-color: #fff !important;
-          width: 100%;
-          left: 0;
-          height: 40px;
-          position: absolute;
-          top: 90px;
-        "
-      ></div>
-      <div
-        class="big_bg"
-        style="
-          background-color: transparent !important;
-          width: 93%;
-          height: 78%;
-          left: 49%;
-          transform: translateX(-50%);
-          position: absolute;
-          top: 90px;
-          z-index: 999;
-        "
-      ></div>
-      <div id="print" style="width: '100%'; height: '700px'; background: #fff">
-        <!-- <img :src="Src" alt="" /> -->
-        <iframe
-          id="printIframe"
-          width="100%"
-          height="100%"
-          :src="Src"
-          frameborder="0"
-        >
-        </iframe>
-      </div>
-    </a-modal>
   </div>
 </template>
 <script>
 import { message } from 'ant-design-vue'
-import $ from 'jquery'
 // 正在加载中的组件
 import Loading from '@/components/loading.vue'
 // 引入接口
+import { get, put, deletefn, post } from '@/request/http'
 import { crud } from '@/request/api'
+
 // antd的弹框
 import { Modal } from 'ant-design-vue'
 export default {
@@ -204,6 +198,12 @@ export default {
   },
   data() {
     return {
+      // 当前编辑的id
+      ids: null,
+      // 编辑和新增的弹框名称
+      Title: '新增用户',
+      // 判断是新增还是编辑
+      types: false,
       // 查看文件的弹框是否展示
       visibleSee: false,
       // 预览文件的 链接
@@ -211,59 +211,29 @@ export default {
       // 正在加载中
       visible1: false,
       text: '加载中',
-      // 拼接 后台返回的链接 baseurl
-      url: process.env.VUE_APP_BASE_URL,
-      // iframe嵌套的网页的src
-      Src: '',
       // 选中的列表的集合
       selectedRowKeys: [],
       // 顶部搜索的字段列表
       searchcolumns: [
         {
-          name: '文件名称',
-          field: 'name'
-        },
-        {
-          name: '搜索关键字',
-          field: 'keyword'
+          name: '用户名',
+          field: 'username'
         }
       ],
       // 表格字段列表
       tablecolumns: [
         {
           dataIndex: 'id',
-          title: '文件编码',
+          title: '用户id',
           ellipsis: true,
           key: 'id',
           width: '5%'
         },
         {
-          dataIndex: 'name',
-          title: '文件名称',
+          dataIndex: 'username',
+          title: '用户名',
           ellipsis: true,
           key: 'name',
-          width: '10%'
-        },
-        {
-          dataIndex: 'type',
-          title: '文件类型',
-          ellipsis: true,
-          key: 'type',
-          width: '5%'
-        },
-        {
-          dataIndex: 'size',
-          title: '文件大小',
-          ellipsis: true,
-          key: 'size',
-          width: '8%',
-          scopedSlots: { customRender: 'size' }
-        },
-        {
-          dataIndex: 'keyword',
-          title: '搜索关键字',
-          ellipsis: true,
-          key: 'keyword',
           width: '10%'
         },
         {
@@ -272,7 +242,7 @@ export default {
           ellipsis: true,
           key: 'action',
           scopedSlots: { customRender: 'action' },
-          width: '8%'
+          width: '15%'
         }
       ],
       // 表格的数据
@@ -294,10 +264,6 @@ export default {
         condition: ''
       }, // 表格的数据是否正在加载中
       loading: false,
-      // 当前的文件对象
-      currentfile: {},
-      // 文件上传列表
-      fileList: [],
       //  搜索的表格
       formsearch: this.$form.createForm(this, { name: 'advanced_search' }),
       // 关键字录入的弹框
@@ -335,10 +301,6 @@ export default {
   },
   mounted() {},
   methods: {
-    diaolog_see_close() {
-      this.visibleSee = false
-      this.Src = ''
-    },
     // 当选中的列表发生变化的时候
     onSelectChange(selectedRowKeys, selectedRows) {
       // console.log(selectedRowKeys, selectedRows)
@@ -378,17 +340,16 @@ export default {
         ...filter
       }
       // console.log({})
-      crud
-        .Search(obj)
+      get('user', obj)
         .then((res) => {
           this.visible1 = false
           // console.log(res)
-          if (res.code != 200 && res.code != 601) {
+          if (res.code != 200) {
             message.error('系统异常请稍后重试')
             return false
           }
           setTimeout(() => {
-            this.loading = false
+            that.loading = false
           }, 200)
           this.data = res.data
           this.pagination.total = res.total
@@ -396,6 +357,10 @@ export default {
         .catch((err) => {
           console.log(err)
           this.visible1 = false
+          setTimeout(() => {
+            // message.error('系统异常请稍后')
+            that.loading = false
+          }, 200)
         })
     },
     // 点击搜索
@@ -434,171 +399,76 @@ export default {
       }, 200)
       // console.log(this.pagination)
     },
-    // 上传文件之前的操作
-    beforeUpload(file, fileList) {
-      // console.log(file)
-      var type = ['doc', 'docx', 'xls', 'xlsx']
-      // console.log(type.indexOf(file.name.split('.')[1]))
-      var arr = file.name.split('.')
-      console.log(type.indexOf(arr[arr.length - 1]))
-      if (type.indexOf(arr[arr.length - 1]) == -1) {
-        message.error('选择正确的文件格式')
-        return false
-      }
-    },
-    // 上传文件
-    uploadFile(file) {
-      this.visible1 = true
-      console.log(file.file)
-      var formData = new FormData()
-      formData.append('file', file.file)
-      // console.log(formData)
-      crud
-        .Upload(formData)
-        .then((res) => {
-          this.visible1 = false
-          if (res.code != 200 && res.code != 601) {
-            message.error(res.message || '系统异常请稍后重试')
-            return false
-          }
-          console.log(res)
-          this.visible = true
 
-          this.currentfile = {
-            ...res.data
-          }
-        })
-        .catch((err) => {
-          console.log(err)
-          this.visible1 = false
-        })
+    // 点击上传按钮之前的操作
+    uploadFilebtn() {
+      this.visible = true
+      this.Title = '新增用户'
+      this.types = true
     },
+
     // 表格的查看 编辑 删除按钮
-    handleDetail(obj) {
-      this.visibleSee = true
+    handleDetail(obj, type) {
+      this.ids = obj.id
+      if (!type) {
+        this.Title = '查看用户'
+      }
       // return false
       this.text = '加载中'
       this.visible1 = true
       // console.log(obj)
-      crud
-        .Detail({ id: obj.id })
-        .then((res) => {
-          console.log(res)
-          this.visible1 = false
-          if (res.code != 200 && res.code != 601) {
-            message.error('系统异常请稍后重试')
-            return false
-          }
-          // var html = this.url + res.data.uri + res.data.type
-          var html = res.data.previewUrl
-          console.log(html)
-          // window.open(html)
-          this.Src = html
-        })
-        .catch((err) => {
-          console.log(err)
-          this.visible1 = false
-        })
-    },
-    // 表格的编辑
-    handleEdit(obj) {
-      crud.Detail({ id: obj.id }).then((res) => {
+      get('user/findById', { id: obj.id }).then((res) => {
+        this.visible1 = false
+        if (res.code != 200) {
+          message.error('系统异常，请稍后重试')
+          return false
+        }
         this.visible = true
-        // console.log(obj)
-        // console.log(res)
         this.$nextTick(() => {
           this.form.setFieldsValue({
-            keyword: res.data.keyword
+            username: res.data.username,
+            password: res.data.password
           })
         })
       })
     },
-    // 下载文件
-    download(record) {
-      this.visible1 = true
-      this.text = '下载中'
-      // console.log(record.type)
-      var type =
-        record.type.indexOf('doc') != -1
-          ? 'application/msword'
-          : 'application/vnd.ms-excel'
-      // console.log(type)
-      crud
-        .DetailHtml({ id: record.id })
-        .then((res) => {
-          console.log(this.visible1)
-          this.visible1 = false
-          if (res.code != 200 && res.code != 601) {
-            message.error('系统异常请稍后')
-            return false
-          }
-          crud
-            .DownLoad({ id: record.id })
-            .then((res) => {
-              // if (res.code != 200 && res.code != 601) {
-              //   message.error('下载失败请重试')
-              //   return false
-              // }
-              this.visible1 = false
-              // console.log(res)
-              const blob = new Blob([res], { type: type }) // res就是接口返回的文件流了
-              const objectUrl = URL.createObjectURL(blob)
-              window.location.href = objectUrl
-            })
-            .catch((err) => {
-              console.log(err)
-              this.visible1 = false
-            })
-        })
-        .catch((err) => {
-          console.log(err)
-          this.visible1 = false
-        })
+    // 表格的编辑
+    handleEdit(obj) {
+      this.types = false
+      this.Title = '编辑用户'
+      this.handleDetail(obj, 'edit')
     },
-    // 打印文件
-    print(obj) {
-      // console.log(this.url)
-      sessionStorage.setItem(
-        'selectedRowKeys',
-        JSON.stringify(this.selectedRowKeys)
-      )
-      sessionStorage.setItem('pagination', JSON.stringify(this.pagination))
-      sessionStorage.setItem('filter', JSON.stringify(this.filter))
-      sessionStorage.setItem('sort', JSON.stringify(this.sort))
-      this.visible1 = true
-      this.text = '解析中'
-      crud
-        .DetailHtml({ id: obj.id })
-        .then((res) => {
-          if (res.code != 200 && res.code != 601) {
-            message.error('系统异常请稍后')
-            this.visible1 = false
-            return false
+    // 单个删除
+    del_single(obj) {
+      // console.log(this.selectedRowKeys)
+      var that = this
+      Modal.confirm({
+        title: '提示',
+        centered: true,
+        content: '是否删除当前选中的数据?',
+        closable: true,
+        okText: '确认',
+        okButtonProps: {
+          props: {
+            type: 'default'
           }
-          crud
-            .DownLoad({ id: obj.id })
-            .then((re) => {
-              // console.log(re)
-              this.visible1 = false
-              var html = this.url + res.data
-              this.Src = html
-              setTimeout(() => {
-                // document.body.innerHTML = document.getElementById('print').innerHTML
-              }, 1000)
-              setTimeout(() => {
-                $('iframe')[0].contentWindow.print()
-                // location.reload()
-              }, 2000)
-            })
-            .catch((err) => {
-              console.log(err)
-              this.visible1 = false
-            })
-        })
-        .catch((err) => {
-          console.log(err)
-          this.visible1 = false
-        })
+        },
+        cancelText: '取消',
+        cancelButtonProps: {
+          props: {
+            type: 'primary'
+          }
+        },
+        onOk() {
+          const arr = []
+          arr.push(obj.id)
+          console.log(arr)
+          that.delfn(arr)
+        },
+        onCancel() {
+          // console.log('cancel')
+        }
+      })
     },
     // 批量删除
     delSelect() {
@@ -630,26 +500,34 @@ export default {
         }
       })
     },
+    // 删除
     delfn(arr) {
       var that = this
-      crud.Delete({ ids: arr.join(',') }).then((res) => {
-        // console.log(res)
-        if (res.code != 200 && res.code != 601) {
-          message.error('删除失败，请稍后重试')
-          return false
-        }
-        if (this.pagination.current != 1) {
-          var nowPage = this.pagination.current * this.pagination.pageSize + 1
-          if ((this.pagination.total = nowPage)) {
-            this.pagination.current--
+      deletefn('user', { ids: arr.join(',') })
+        .then((res) => {
+          if (res.code != 200) {
+            message.error('删除失败，请稍后重试')
+            return false
           }
-        }
-        // 删除完成之后将选中的列表清空
-        this.selectedRowKeys = []
-        setTimeout(() => {
-          that.getTable()
-        }, 200)
-      })
+          if (this.pagination.current != 1) {
+            var nowPage = this.pagination.current * this.pagination.pageSize + 1
+            if ((this.pagination.total = nowPage)) {
+              this.pagination.current--
+            }
+          }
+          // 删除完成之后将选中的列表清空
+          this.selectedRowKeys = []
+          setTimeout(() => {
+            that.getTable()
+          }, 200)
+        })
+        .catch((err) => {
+          // console.log(err)
+          this.visible1 = false
+          setTimeout(() => {
+            // message.error('系统异常请稍后')
+          }, 200)
+        })
     },
     handleDel(obj) {
       var that = this
@@ -681,90 +559,67 @@ export default {
     },
     // 关键字弹框的 取消确认按钮
     handleCancel() {
-      var that = this
-      this.currentfile = {}
       this.visible = false
-      setTimeout(() => {
-        that.getTable()
-      }, 100)
+      this.visible1 = false
     },
     handleOk(e) {
       var that = this
+      if (this.confirmLoading) {
+        return false
+      }
+      // var that = this
       e.preventDefault()
-      this.confirmLoading = true
+
       this.form.validateFields((error, values) => {
         if (error) {
           console.log(error)
         }
-        // console.log(values)
-        var obj = {
-          ...this.currentfile,
-          ...values
+        if (!values.password) {
+          message.error('请输入密码')
+          return false
         }
-        crud.Update(obj).then((res) => {
-          this.visible = false
-          // console.log(res)
-          if (res.code != 200 && res.code != 601) {
-            message.error('系统异常请稍后重试')
-            return false
-          }
-          this.currentfile = {}
-          setTimeout(() => {
-            that.getTable()
-          }, 100)
-        })
-      })
-    },
-    // 判断当前浏览类型
-    BrowserType() {
-      var userAgent = navigator.userAgent // 取得浏览器的userAgent字符串
-      var isOpera = userAgent.indexOf('Opera') > -1 // 判断是否Opera浏览器
-      var isIE =
-        userAgent.indexOf('compatible') > -1 &&
-        userAgent.indexOf('MSIE') > -1 &&
-        !isOpera // 判断是否IE浏览器
-      var isEdge =
-        userAgent.indexOf('Windows NT 6.1; Trident/7.0;') > -1 && !isIE // 判断是否IE的Edge浏览器
-      var isFF = userAgent.indexOf('Firefox') > -1 // 判断是否Firefox浏览器
-      var isSafari =
-        userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') == -1 // 判断是否Safari浏览器
-      var isChrome =
-        userAgent.indexOf('Chrome') > -1 && userAgent.indexOf('Safari') > -1 // 判断Chrome浏览器
-      console.log(isIE)
-      if (isIE) {
-        var reIE = new RegExp('MSIE (\\d+\\.\\d+);')
-        reIE.test(userAgent)
-        var fIEVersion = parseFloat(RegExp['$1'])
-        if (fIEVersion == 7) {
-          return 'IE7'
-        } else if (fIEVersion == 8) {
-          return 'IE8'
-        } else if (fIEVersion == 9) {
-          return 'IE9'
-        } else if (fIEVersion == 10) {
-          return 'IE10'
-        } else if (fIEVersion == 11) {
-          return 'IE11'
+        if (!values.username) {
+          message.error('请输入用户名')
+          return false
+        }
+        this.confirmLoading = true
+        this.visible1 = true
+        let data = values
+        if (this.types) {
+          this.text = '加载中'
         } else {
-          return '0'
-        } // IE版本过低
-      } // isIE end
-
-      if (isFF) {
-        return 'FF'
-      }
-      if (isOpera) {
-        return 'Opera'
-      }
-      if (isSafari) {
-        return 'Safari'
-      }
-      if (isChrome) {
-        return 'Chrome'
-      }
-      if (isEdge) {
-        return 'Edge'
-      }
+          this.text = '编辑中'
+          // console.log(values)
+          data = {
+            id: this.ids,
+            ...values
+          }
+        }
+        // console.log(data)
+        // return false
+        put('user', data)
+          .then((res) => {
+            this.confirmLoading = false
+            this.visible1 = false
+            if (res.code != 200) {
+              message.error(res.message || '系统异常请稍后重试')
+              return false
+            }
+            console.log(res)
+            this.visible = false
+            setTimeout(() => {
+              that.getTable()
+            }, 100)
+          })
+          .catch((err) => {
+            console.log(err)
+            this.visible1 = false
+            this.confirmLoading = false
+            setTimeout(() => {
+              // message.error('系统异常请稍后')
+            }, 200)
+          })
+      })
     }
   }
 }
@@ -778,7 +633,6 @@ export default {
       width: 100%;
       height: 100%;
       padding: 40px !important;
-      position: relative;
       #print {
         height: 100%;
       }
@@ -803,6 +657,9 @@ export default {
   .ant-form-inline .ant-form-item {
     width: 100%;
     display: flex;
+    .ant-form-item-label {
+      width: 5em;
+    }
     .ant-form-item-control-wrapper {
       flex: 1;
     }

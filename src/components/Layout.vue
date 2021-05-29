@@ -16,7 +16,11 @@
           padding: '0',
           position: 'fixed',
           zIndex: 1,
-          width: '100%'
+          width: '100%',
+          display: 'flex',
+          'align-items': 'center',
+          'justify-content': 'space-between',
+          'box-sizing': 'border-box'
         }"
       >
         <a-icon
@@ -24,6 +28,19 @@
           :type="collapsed ? 'menu-unfold' : 'menu-fold'"
           @click="() => (collapsed = !collapsed)"
         />
+
+        <a-dropdown
+          v-if="userInfo.username"
+          style="margin-right: 22em"
+          :trigger="['click']"
+        >
+          <a class="ant-dropdown-link" @click="(e) => e.preventDefault()">
+            {{ userInfo.username }} <a-icon type="down" />
+          </a>
+          <a-menu slot="overlay">
+            <a-menu-item key="0" @click="login_out"> 退出登录 </a-menu-item>
+          </a-menu>
+        </a-dropdown>
       </a-layout-header>
       <a-layout-content
         :style="{
@@ -43,6 +60,8 @@
 </template>
 <script>
 import SlideBar from '@/components/SlideBar.vue'
+import { post } from '@/request/http'
+import { message } from 'ant-design-vue'
 export default {
   components: {
     SlideBar
@@ -50,20 +69,45 @@ export default {
   data() {
     return {
       collapsed: false,
-      current_route: {}
+      current_route: {},
+      // 用户信息
+      userInfo: {
+        username: ''
+      }
     }
   },
   watch: {
     $route: {
       deep: true,
       handler: function (val, oldv) {
-        // console.log(val)
-        this.current_route = val
+        // this.current_route = val
+        let current_name = ''
+        if (val.name == 'WebData' || val.name == 'Data') {
+          current_name = val.name
+        } else {
+          current_name = val.meta.parentName
+        }
+        const routes = this.$router.options.routes.filter((v) => v.path == '/')
+        this.current_route = routes[0].children.filter(
+          (v) => v.name == current_name
+        )[0]
       }
     }
   },
   created() {
-    this.current_route = this.$route
+    let current_name = ''
+    if (this.$route.name == 'WebData' || this.$route.name == 'Data') {
+      current_name = this.$route.name
+    } else {
+      current_name = this.$route.meta.parentName
+    }
+    const routes = this.$router.options.routes.filter((v) => v.path == '/')
+    this.current_route = routes[0].children.filter(
+      (v) => v.name == current_name
+    )[0]
+    if (localStorage.getItem('userInfo')) {
+      this.userInfo = JSON.parse(localStorage.getItem('userInfo'))
+    }
   },
   methods: {
     onCollapse(collapsed, type) {
@@ -71,6 +115,22 @@ export default {
     },
     onBreakpoint(broken) {
       // console.log(broken)
+    },
+    // 退出登录
+    login_out() {
+      const that = this
+      localStorage.clear()
+      post('/user/quit').then((res) => {
+        if (res.code != 200) {
+          message.error('系统系统，请稍后重试')
+          return false
+        }
+        setTimeout(() => {
+          that.$router.push({
+            path: '/login'
+          })
+        })
+      })
     }
   }
 }

@@ -415,15 +415,16 @@ export default {
       crud
         .Search(obj)
         .then((res) => {
-          this.visible1 = false
-          // console.log(res)
-          if (res.code != 200) {
-            message.error('系统异常请稍后重试')
-            return false
-          }
           setTimeout(() => {
             that.loading = false
           }, 200)
+          this.visible1 = false
+          // console.log(res)
+          if (res.code != 200 && res.code != 601) {
+            message.error('系统异常请稍后重试')
+            return false
+          }
+
           this.data = res.data
           this.pagination.total = res.total
         })
@@ -431,7 +432,7 @@ export default {
           console.log(err)
           this.visible1 = false
           setTimeout(() => {
-            message.error('系统异常请稍后')
+            // message.error('系统异常请稍后')
             that.loading = false
           }, 200)
         })
@@ -512,7 +513,7 @@ export default {
         .then((res) => {
           console.log(res)
           this.visible1 = false
-          if (res.code != 200) {
+          if (res.code != 200 && res.code != 601) {
             message.error('系统异常请稍后重试')
             return false
           }
@@ -558,7 +559,7 @@ export default {
         .Detail({ id: record.id })
         .then((res) => {
           console.log(res)
-          // if (res.code != 200) {
+          // if (res.code != 200 && res.code!=601) {
           //   message.error('下载失败请重试')
           //   return false
           // }
@@ -584,7 +585,7 @@ export default {
       this.visible1 = true
       this.text = '解析中'
       crud.DetailHtml({ id: obj.id }).then((res) => {
-        if (res.code != 200) {
+        if (res.code != 200 && res.code != 601) {
           message.error('系统异常请稍后')
           this.visible1 = false
           return false
@@ -645,7 +646,7 @@ export default {
       var that = this
       crud.Delete({ ids: arr.join(',') }).then((res) => {
         // console.log(res)
-        if (res.code != 200) {
+        if (res.code != 200 && res.code != 601) {
           message.error('删除失败，请稍后重试')
           return false
         }
@@ -729,7 +730,7 @@ export default {
             .then((res) => {
               this.confirmLoading = false
               this.visible1 = false
-              if (res.code != 200) {
+              if (res.code != 200 && res.code != 601) {
                 message.error(res.message || '系统异常请稍后重试')
                 return false
               }
@@ -759,7 +760,7 @@ export default {
             .then((res) => {
               console.log(res)
               this.visible1 = false
-              if (res.code != 200) {
+              if (res.code != 200 && res.code != 601) {
                 message.error('系统异常请稍后重试')
                 return false
               }

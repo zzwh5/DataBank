@@ -8,10 +8,16 @@
       theme="dark"
       :inline-collapsed="collapsed"
     >
-      <a-menu-item :key="currentRoute.path" @click="goRoute(currentRoute.path)">
+      <template v-for="item in currentRoute.children">
+        <a-menu-item :key="item.path" @click="goRoute(item.path)">
+          <a-icon :type="item.meta.icon" />
+          <span> {{ item.meta.title }}</span>
+        </a-menu-item>
+      </template>
+      <!-- <a-menu-item :key="currentRoute.path" @click="goRoute(currentRoute.path)">
         <a-icon type="database" />
         <span> {{ currentRoute.meta.title }}</span>
-      </a-menu-item>
+      </a-menu-item> -->
       <!-- <template v-for="item in Routes">
         <template v-if="item.meta.hasChildren"> -->
       <!--  vue组件自己调用自己  -->
@@ -89,24 +95,29 @@ export default {
   },
   watch: {},
   created() {
-    // console.log(this.$router.options.routes)
-    this.Routes = this.$router.options.routes.filter(
-      (v) => v.meta.title != '登录'
-    )
-    console.log(this.Routes)
+    // // console.log(this.$router.options.routes)
+    // this.Routes = this.$router.options.routes.filter(
+    //   (v) => v.meta.title != '登录'
+    // )
+    // console.log(this.currentRoute)
   },
   methods: {
     // 路由跳转
     goRoute(path) {
+      console.log(path)
       if (path == '/') {
         path = '/data'
       }
-      console.log(path)
-      if (this.$route.path != '/' + path) {
-        this.$router.push({
-          path: path
-        })
-      }
+      // console.log(path)
+      this.$router.push({
+        path: path
+      })
+      // console.log(this.$router)
+      // if (this.$route.path != '/' + path) {
+      //   this.$router.push({
+      //     path: path
+      //   })
+      // }
     }
   }
 }

@@ -1,7 +1,14 @@
 import axios from 'axios'
 import qs from 'qs'
+import router from '../router'
+import { message } from 'ant-design-vue'
+
+
+// 获取本地存储的token
+// const token = localStorage.getItem('token')
 
 const baseUrl = process.env.VUE_APP_BASE_API
+// console.log(baseUrl)
 // 创建axios实例
 axios.create({
   baseURL: process.env.VUE_APP_BASE_API
@@ -9,7 +16,11 @@ axios.create({
 
 // http request拦截器 添加一个请求拦截器
 axios.interceptors.request.use(
-  function(config) {
+  function(config) {  
+    if (localStorage.getItem('token')) {
+      // 判断是否存在token，如果存在的话，则每个http header都加上token
+      config.headers.Token = localStorage.getItem('token'); 
+    }    
     return config
   },
   function(error) {
@@ -20,9 +31,24 @@ axios.interceptors.request.use(
 
 axios.interceptors.response.use(
   response => {
+    // console.log('111', response)
+    if (response.data.code == 601) {
+      message.error('请登录')
+      router.push({
+        path: '/login'
+      })
+    }
     return response
   },
   error => {
+    // console.log('222', JSON.stringify(error))
+    if (error.message.indexOf(500) != -1) {
+      // console.log(111)
+      message.error('请登录')
+      router.push({
+        path: '/login'
+      })
+    }
     return Promise.reject(error)
   }
 )
@@ -38,7 +64,7 @@ export function get(url, params) {
         resolve(res.data)
       })
       .catch(err => {
-        reject(err.data)
+        reject(err)
       })
 
     // axios({
@@ -67,7 +93,7 @@ export function gets(url, params) {
         resolve(res.data)
       })
       .catch(err => {
-        reject(err.data)
+        reject(err)
       })
   })
 }
@@ -91,7 +117,6 @@ export function post(url, params, type) {
         resolve(res.data)
       })
       .catch(error => {
-        // console.log(error)
         reject(error)
       })
   })
@@ -182,7 +207,7 @@ export function upload(url, params) {
         resolve(res.data)
       })
       .catch(error => {
-        // console.log(error)
+        console.log(JSON.stringify(error))
         reject(error)
       })
   })
